@@ -109,7 +109,6 @@ public class PopupMessageBar {
         }
     }
 
-
     public void show(){
            if(isShowing()){
                queue.add(container);
@@ -123,7 +122,7 @@ public class PopupMessageBar {
         appearAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
             try {
                 wm.addView(view, params);
-                view.findViewById(R.id.rlBackground).startAnimation(appearAnimation);
+                bar.startAnimation(appearAnimation);
                 view.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -164,7 +163,7 @@ public class PopupMessageBar {
 
             }
         });
-        view.findViewById(R.id.rlBackground).startAnimation(disappearAnimation);
+        bar.startAnimation(disappearAnimation);
     }
 
     public PopupMessageBar setDuration(long duration){
