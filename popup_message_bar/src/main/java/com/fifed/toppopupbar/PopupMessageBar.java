@@ -1,9 +1,9 @@
 package com.fifed.toppopupbar;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.support.annotation.ColorInt;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,8 +44,19 @@ public class PopupMessageBar {
         return isShowing;
     }
 
-    public PopupMessageBar(Context context) {
-        if(!(context instanceof Activity)){
+
+    public static PopupMessageBar init(Context context){
+        return new PopupMessageBar(context);
+    }
+
+    public static PopupMessageBar init(View targetView){
+        return new PopupMessageBar(targetView);
+    }
+
+    private PopupMessageBar(){}
+
+    private PopupMessageBar(Context context) {
+        if(!(context instanceof ContextThemeWrapper)){
             throw new RuntimeException("Must be Activity context only!");
         }
         this.context = context;
@@ -56,10 +67,10 @@ public class PopupMessageBar {
         initBar();
     }
 
-    public PopupMessageBar(View targetView){
+    private PopupMessageBar(View targetView){
         this.targetView = targetView;
         Context context = targetView.getContext();
-        if(!(context instanceof Activity)){
+        if(!(context instanceof ContextThemeWrapper)){
             throw new RuntimeException("Must be Activity context only!");
         }
         this.context = context;
