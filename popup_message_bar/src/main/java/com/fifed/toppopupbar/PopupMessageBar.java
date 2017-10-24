@@ -9,6 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.WindowManager.BadTokenException;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
@@ -25,7 +27,7 @@ import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
  * Created by Fedir on 22.10.2017.
  */
 
-public class TopPopupBar {
+public class PopupMessageBar {
     private Context context;
     private static int contextHash;
     private WindowManager wm;
@@ -35,14 +37,28 @@ public class TopPopupBar {
     private TextView tvMessage;
     private long duration = 2000;
     private static List<View> queue = new LinkedList<>();
-    private static boolean isAnimation;
-    private static View currentView;
+    private static boolean isShowing;
+    private View targetView;
 
     public static boolean isShowing(){
-        return currentView != null;
+        return isShowing;
     }
 
-    public TopPopupBar(Context context) {
+    public PopupMessageBar(Context context) {
+        if(!(context instanceof Activity)){
+            throw new RuntimeException("Must be Activity context only!");
+        }
+        this.context = context;
+        if(contextHash != 0 && contextHash != context.hashCode()){
+            queue.clear();
+        }
+        contextHash = context.hashCode();
+        initBar();
+    }
+
+    public PopupMessageBar(View targetView){
+        this.targetView = targetView;
+        Context context = targetView.getContext();
         if(!(context instanceof Activity)){
             throw new RuntimeException("Must be Activity context only!");
         }
@@ -63,18 +79,18 @@ public class TopPopupBar {
                         | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT);
         params.gravity = Gravity.TOP;
-        params.verticalMargin  = (float) Utils.getStatusBarHeight(context) / context.getResources().getDisplayMetrics().heightPixels;
+        setPosition();
         wm = (WindowManager) context.getSystemService(WINDOW_SERVICE);
         container = new FrameLayout(context);
         container.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
             @Override
             public void onViewAttachedToWindow(View view) {
-                currentView = view;
+                isShowing = true;
             }
 
             @Override
             public void onViewDetachedFromWindow(View view) {
-                currentView = null;
+                isShowing = false;
             }
         });
         bar =  LayoutInflater.from(context).inflate(R.layout.bar_view, null);
@@ -82,53 +98,46 @@ public class TopPopupBar {
         tvMessage = bar.findViewById(R.id.tvMessage);
     }
 
+    private void setPosition(){
+        if(targetView == null) {
+            params.verticalMargin = (float) Utils.getStatusBarHeight(context) / context.getResources().getDisplayMetrics().heightPixels;
+        } else {
+            int[] location = new int[2];
+            targetView.getLocationOnScreen(location);
+            int bottom = location[1] + targetView.getHeight();
+            params.verticalMargin = (float) bottom / context.getResources().getDisplayMetrics().heightPixels;
+        }
+    }
+
+
     public void show(){
            if(isShowing()){
                queue.add(container);
-               if(!isAnimation){
-                   hideBar(currentView);
-               }
            } else {
                showBar(container);
            }
     }
 
     private void showBar(final View view){
-        isAnimation = true;
         Animation appearAnimation = AnimationUtils.loadAnimation(context, R.anim.fade_in_anim);
-        appearAnimation.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
+        appearAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
+            try {
+                wm.addView(view, params);
+                view.findViewById(R.id.rlBackground).startAnimation(appearAnimation);
+                view.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        hideBar(view);
+                    }
+                }, duration + appearAnimation.getDuration());
+            } catch (BadTokenException e){
+                //NOP
             }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                isAnimation = false;
-                if(!queue.isEmpty()){
-                    hideBar(view);
-                }
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-
-            wm.addView(view, params);
-            view.findViewById(R.id.rlBackground).startAnimation(appearAnimation);
-            view.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    hideBar(view);
-                }
-            }, duration + appearAnimation.getDuration());
     }
 
     private void hideBar(final View view){
-        isAnimation = true;
         Animation disappearAnimation = AnimationUtils.loadAnimation(context, R.anim.fade_out);
+        disappearAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
         disappearAnimation.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -137,8 +146,11 @@ public class TopPopupBar {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                wm.removeViewImmediate(view);
-                isAnimation = false;
+                try {
+                    wm.removeViewImmediate(view);
+                } catch (BadTokenException e){
+                    //NOP
+                }
                 if(!queue.isEmpty()){
                     showBar(queue.get(0));
                     if(!queue.isEmpty()){
@@ -155,27 +167,27 @@ public class TopPopupBar {
         view.findViewById(R.id.rlBackground).startAnimation(disappearAnimation);
     }
 
-    public TopPopupBar setDuration(long duration){
+    public PopupMessageBar setDuration(long duration){
         this.duration = duration;
         return this;
     }
 
-    public TopPopupBar setTextSize(float size) {
+    public PopupMessageBar setTextSize(float size) {
         tvMessage.setTextSize(size);
         return this;
     }
 
-    public TopPopupBar setMessage(String message){
+    public PopupMessageBar setMessage(String message){
         tvMessage.setText(message);
         return this;
     }
 
-    public TopPopupBar setTextColor(@ColorInt int color){
+    public PopupMessageBar setTextColor(@ColorInt int color){
         tvMessage.setTextColor(color);
         return this;
     }
 
-    public TopPopupBar setBackgroundColor(@ColorInt int color){
+    public PopupMessageBar setBackgroundColor(@ColorInt int color){
         bar.setBackgroundColor(color);
         return this;
     }
