@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.fifed.toppopupbar.PopupLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:id="@+id/rlBackground"
     android:gravity="center"
+    android:id="@+id/layoutBackground"
     android:background="@android:color/black"
     android:padding="20dp">
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
+        android:layout_gravity="center"
+        android:layout_centerHorizontal="true"
         android:textColor="@android:color/white"
         android:id="@+id/tvMessage"
         android:textSize="15sp" />
 
-</RelativeLayout>
+</com.fifed.toppopupbar.PopupLayout>

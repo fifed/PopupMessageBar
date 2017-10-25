@@ -1,6 +1,7 @@
 package com.fifed.toppopupbar;
 
 import android.content.Context;
+import android.util.TypedValue;
 
 /**
  * Created by Fedir on 22.10.2017.
@@ -14,5 +15,9 @@ class Utils {
             result = context.getResources().getDimensionPixelSize(resourceId);
         }
         return result;
+    }
+
+    static int DPtoPX(Context context, float dp){
+       return  (int) (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics()) + 0.5f);
     }
 }

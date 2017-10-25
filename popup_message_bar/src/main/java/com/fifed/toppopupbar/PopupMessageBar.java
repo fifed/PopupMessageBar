@@ -3,14 +3,13 @@ package com.fifed.toppopupbar;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.support.annotation.ColorInt;
+import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.WindowManager.BadTokenException;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
@@ -33,7 +32,7 @@ public class PopupMessageBar {
     private WindowManager wm;
     private WindowManager.LayoutParams params;
     private FrameLayout container;
-    private View bar;
+    private PopupLayout layoutBar;
     private TextView tvMessage;
     private long duration = 2000;
     private static List<View> queue = new LinkedList<>();
@@ -104,9 +103,11 @@ public class PopupMessageBar {
                 isShowing = false;
             }
         });
-        bar =  LayoutInflater.from(context).inflate(R.layout.bar_view, null);
-        container.addView(bar, new ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
-        tvMessage = bar.findViewById(R.id.tvMessage);
+        layoutBar = (PopupLayout) LayoutInflater.from(context).inflate(R.layout.bar_view, null);
+        FrameLayout.LayoutParams barParams = new FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        barParams.gravity = Gravity.CENTER;
+        container.addView(layoutBar, barParams);
+        tvMessage = layoutBar.findViewById(R.id.tvMessage);
     }
 
     private void setPosition(){
@@ -130,10 +131,9 @@ public class PopupMessageBar {
 
     private void showBar(final View view){
         Animation appearAnimation = AnimationUtils.loadAnimation(context, R.anim.fade_in_anim);
-        appearAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
             try {
                 wm.addView(view, params);
-                bar.startAnimation(appearAnimation);
+                view.findViewById(R.id.layoutBackground).startAnimation(appearAnimation);
                 view.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -141,13 +141,12 @@ public class PopupMessageBar {
                     }
                 }, duration + appearAnimation.getDuration());
             } catch (BadTokenException e){
-                //NOP
+                Log.d("BadTokenException" , " = show");
             }
     }
 
     private void hideBar(final View view){
         Animation disappearAnimation = AnimationUtils.loadAnimation(context, R.anim.fade_out);
-        disappearAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
         disappearAnimation.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -159,7 +158,7 @@ public class PopupMessageBar {
                 try {
                     wm.removeViewImmediate(view);
                 } catch (BadTokenException e){
-                    //NOP
+                    Log.d("BadTokenException" , " = hide");
                 }
                 if(!queue.isEmpty()){
                     showBar(queue.get(0));
@@ -174,7 +173,7 @@ public class PopupMessageBar {
 
             }
         });
-        bar.startAnimation(disappearAnimation);
+        view.findViewById(R.id.layoutBackground).startAnimation(disappearAnimation);
     }
 
     public PopupMessageBar setDuration(long duration){
@@ -198,7 +197,17 @@ public class PopupMessageBar {
     }
 
     public PopupMessageBar setBackgroundColor(@ColorInt int color){
-        bar.setBackgroundColor(color);
+        layoutBar.setBackgroundColor(color);
+        return this;
+    }
+
+    public PopupMessageBar setMaxWidth(float maxWidthDp) {
+        layoutBar.setMaxWidth(maxWidthDp);
+        return this;
+    }
+
+    public PopupMessageBar setMaxWidth(int maxWidthPx) {
+        layoutBar.setMaxWidth(maxWidthPx);
         return this;
     }
 }
